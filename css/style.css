@@ -163,3 +163,9 @@ footer .note { font-size: 12px; opacity: .8; }
   .tabs button { min-width: 70px; font-size: 18px; } .tabs button span { font-size: 13px; }
   .detail { grid-template-columns: 1fr; }
 }
+
+/* 替代指法並列，觸控裝置保留足夠空間。 */
+.sys[hidden] { display: none; }
+.dfing { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.dfing figure { margin: 0; text-align: center; }
+.levels button:disabled { cursor: default; }

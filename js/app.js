@@ -1,7 +1,7 @@
 /* 直笛小幫手 主程式：指法表、記憶遊戲、小測驗、小作曲、我的作品 */
-import { NOTES, NOTE, LEVELS, SYSTEMS, label, fingerOf, hasFinger, levelNotes, fingerSVG, staffSVG, singleNoteAbc, SINGLE } from './music.js?v=2';
-import { playNote, playMelody, renderWav } from './audio.js?v=2';
-import * as store from './store.js?v=2';
+import { NOTES, NOTE, LEVELS, SYSTEMS, label, fingersOf, fingerOf, hasFinger, levelNotes, fingerSVG, staffSVG, singleNoteAbc, SINGLE } from './music.js?v=3';
+import { playNote, playMelody, renderWav, renderAudio, renderMp3 } from './audio.js?v=3';
+import * as store from './store.js?v=3';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -22,7 +22,7 @@ function toast(html, ms = 2200) {
 function noteBtn(n, { h = 64, attrs = '', showWait = true } = {}) {
   const f = fingerOf(n, sys());
   return `<button class="nbtn ${f ? '' : 'wait'}" style="--c:${n.color}" data-id="${n.id}" ${attrs}>
-    <b>${n.hi ? '<small>高音</small>' : ''}${n.sol}</b>${fingerSVG(f, { h })}<small>${n.name}</small>${!f && showWait ? '<span class="w">等待老師提供</span>' : ''}</button>`;
+    <b>${n.hi ? `<small>${n.id.endsWith('6') ? '超高音' : '高音'}</small>` : ''}${n.sol}</b>${fingerSVG(f, { h })}<small>${n.name}</small>${!f && showWait ? '<span class="w">等待老師提供</span>' : ''}</button>`;
 }
 
 /* ---------------- 分頁與英式／德式切換 ---------------- */
@@ -39,7 +39,7 @@ function showTab(id) {
 $$('.tabs button').forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
 
 function setSys(s, rerender = true) {
-  db.prefs.system = s; store.save();
+  s = 'english'; db.prefs.system = s; store.save();
   $$('.sys button').forEach((b) => b.setAttribute('aria-checked', b.dataset.sys === s));
   if (rerender) { memory.stop(); quiz.stop(); tabs[curTab](); }
 }
@@ -49,7 +49,7 @@ $$('.sys button').forEach((b) => (b.onclick = () => { setSys(b.dataset.sys); com
 function levelPicker(root, cur, onPick) {
   root.innerHTML = LEVELS.map((lv) => {
     const { ready } = levelNotes(lv, sys());
-    return `<button data-lv="${lv.id}" class="${lv.id === cur ? 'sel' : ''} ${ready ? '' : 'wait'}"><b>${lv.label}</b><small>${lv.desc}</small>${ready ? '' : '<span class="w">⏳ 等待老師提供指法</span>'}</button>`;
+    return `<button data-lv="${lv.id}" ${ready ? '' : 'disabled'} class="${lv.id === cur ? 'sel' : ''} ${ready ? '' : 'wait'}"><b>${lv.label}</b><small>${lv.desc}</small>${ready ? '' : `<span class="w">⏳ 等待老師提供${lv.pending && !lv.notes?.length ? '進度' : '指法'}</span>`}</button>`;
   }).join('');
   $$('button', root).forEach((b) => (b.onclick = () => {
     const lv = LEVELS.find((l) => l.id === b.dataset.lv);
@@ -77,14 +77,15 @@ const chart = {
         <li>${g(`<circle cx="15" cy="15" r="9" fill="#fff" stroke="${C}" stroke-width="2"/><path d="M15 6 A9 9 0 0 0 15 24 Z" fill="${C}"/>`)} 塗一半：半孔（按一半）</li>
         <li>${g(`<circle cx="15" cy="15" r="9" fill="#fff" stroke="${C}" stroke-width="2" stroke-dasharray="3 2"/>`)} 左邊虛線圈（0）：笛子<b>後面</b>的拇指孔</li>
         <li>第 6、7 孔是兩個小孔：兩個都塗黑＝全按；只塗大的＝按一半</li>
-        <li>目前是<b>${sysLabel()}</b>指法，可以在右上角切換英式／德式</li>
+        <li>第 8 孔是笛尾：塗黑表示用膝蓋或手蓋住</li>
+        <li>目前是<b>${sysLabel()}</b>指法；德式等待老師提供</li>
       </ul>`;
   },
   detail() {
     const pane = $('#chart'), n = NOTE[this.sel], f = fingerOf(n, sys());
     $$('.nbtn', pane).forEach((b) => b.classList.toggle('sel', b.dataset.id === this.sel));
     const box = $('.detail', pane);
-    box.innerHTML = `<div class="dfing">${f ? fingerSVG(f, { h: 220, showNums: true }) : fingerSVG(null, { h: 220 })}</div>
+    box.innerHTML = `<div class="dfing">${f ? fingersOf(n, sys()).map((v, i, a) => `<figure>${fingerSVG(v, { h: 220, showNums: true })}${a.length > 1 ? `<figcaption>指法 ${i ? 'II' : 'I'}</figcaption>` : ''}</figure>`).join('') : fingerSVG(null, { h: 220 })}</div>
       <div class="dinfo">
         <div class="dname" style="color:${n.color === '#fdd835' ? '#c9a800' : n.color}">${label(n)}<small>${n.name}</small></div>
         <div class="dstaff"></div>
@@ -318,8 +319,9 @@ const compose = {
     if (this.w) return;
     const d = db.draft && store.parseWorkFile(JSON.stringify(db.draft))[0];
     this.w = d ? { ...d, imported: db.draft.imported, id: db.draft.id } : store.newWork();
+    this.w.system = 'english';
   },
-  open(w) { this.stop(); this.w = JSON.parse(JSON.stringify(w)); this.sel = -1; if (w.system !== sys()) setSys(w.system, false); this.draft(); showTab('compose'); },
+  open(w) { this.stop(); this.w = { ...JSON.parse(JSON.stringify(w)), system: 'english' }; this.sel = -1; if (w.system !== sys()) setSys(w.system, false); this.draft(); showTab('compose'); },
   draft() { db.draft = this.w; store.save(); },
   onSys() { if (this.w) { this.w.system = sys(); this.draft(); } },
   render() {
@@ -537,7 +539,7 @@ function shareFiles(files, title) {
 const out = {
   async open(w) {
     const dlg = $('#outDlg');
-    w = JSON.parse(JSON.stringify(w));
+    w = { ...JSON.parse(JSON.stringify(w)), system: 'english' };
     $('.who', dlg).textContent = `${w.title}｜${whoText(w.author)}`;
     $('.preview img', dlg).removeAttribute('src');
     $('.outs', dlg).innerHTML = '<p class="tip">⏳ 正在準備檔案…</p>';
@@ -549,17 +551,23 @@ const out = {
       $('.preview img', dlg).src = URL.createObjectURL(png);
     } catch (e) { console.warn(e); }
     if (w.notes.some((n) => n.p !== 'rest')) {
-      try { files.wav = new File([await renderWav(w.notes.map((n) => ({ hz: n.p === 'rest' ? null : NOTE[n.p]?.hz, beats: n.d / 2 })), w.tempo)], `${base}.wav`, { type: 'audio/wav' }); } catch (e) { console.warn(e); }
+      try {
+        const audio = await renderAudio(w.notes.map((n) => ({ hz: n.p === 'rest' ? null : NOTE[n.p]?.hz, beats: n.d / 2 })), w.tempo);
+        files.wav = new File([await renderWav(null, null, audio)], `${base}.wav`, { type: 'audio/wav' });
+        try { files.mp3 = new File([await renderMp3(null, null, audio)], `${base}.mp3`, { type: 'audio/mpeg' }); }
+        catch (e) { console.warn(e); toast('MP3 準備失敗，請先下載高音質 WAV', 5000); }
+      } catch (e) { console.warn(e); toast('錄音準備失敗，請重新開啟輸出', 5000); }
     }
     files.json = new File([workJson(w)], `${base}.json`, { type: 'application/json' });
     const rows = [
+      ['mp3', '🎧 旋律錄音（MP3，預設）', '檔案較小，適合交作業'],
       ['png', '🖼 作品卡（圖片 PNG）', '五線譜＋指法＋班級座號姓名'],
-      ['wav', '🎧 旋律錄音（WAV）', '用電腦合成的直笛聲'],
+      ['wav', '🎧 高音質錄音（WAV）', '檔案較大，保留完整音質'],
       ['json', '📄 作品檔（JSON）', '之後可以用「匯入作品檔」打開繼續改'],
     ].filter(([k]) => files[k]);
     $('.outs', dlg).innerHTML = rows.map(([k, t, s]) => `<div class="row"><span>${t}<small>${s}・${esc(files[k].name)}</small></span><button type="button" data-share="${k}">分享</button><button type="button" class="dl" data-dl="${k}">下載</button></div>`).join('')
       + '<div class="row all"><span>全部一起</span><button type="button" data-share="all">全部分享</button><button type="button" class="dl" data-dl="all">全部下載</button></div>';
-    const pick = (k) => (k === 'all' ? Object.values(files) : [files[k]]);
+    const pick = (k) => (k === 'all' ? ['mp3', 'png', 'json'].map((key) => files[key]).filter(Boolean) : [files[k]]);
     $$('[data-share]', dlg).forEach((b) => (b.onclick = () => shareFiles(pick(b.dataset.share), w.title)));
     $$('[data-dl]', dlg).forEach((b) => (b.onclick = () => pick(b.dataset.dl).forEach(download)));
   },
@@ -612,4 +620,4 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { /* 不能離線也沒關係 */ }));
 }
 
-window.__rh = { db, compose, memory, quiz, out, cardPng, renderWav };   // 測試用
+window.__rh = { db, compose, memory, quiz, out, cardPng, renderWav, renderMp3 };   // 測試用

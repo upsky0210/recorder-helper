@@ -48,8 +48,8 @@ export function playMelody(events, tempo, onStep, onEnd) {
   };
 }
 
-/* 用 OfflineAudioContext 合成整段旋律，回傳 WAV Blob（44.1kHz、16 位元、單聲道） */
-export async function renderWav(events, tempo) {
+/* 共用離線合成：MP3 與 WAV 使用同一份 44.1 kHz 單聲道聲音。 */
+export async function renderAudio(events, tempo) {
   const rate = 44100, spb = 60 / tempo;
   const total = events.reduce((s, e) => s + e.beats * spb, 0) + 0.8;
   const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -64,7 +64,37 @@ export async function renderWav(events, tempo) {
     const p = c.startRendering();
     if (p?.then) p.then(res, rej); else c.oncomplete = (ev) => res(ev.renderedBuffer);   // 舊版 Safari
   });
-  return wavBlob(buf.getChannelData(0), rate);
+  return buf;
+}
+
+export async function renderWav(events, tempo, audio) {
+  const buf = audio || await renderAudio(events, tempo);
+  return wavBlob(buf.getChannelData(0), buf.sampleRate);
+}
+
+/* 分段編碼並定期讓出主執行緒，讓 iPad 能持續更新畫面。 */
+export async function renderMp3(events, tempo, audio) {
+  const buf = audio || await renderAudio(events, tempo);
+  if (!window.lamejs?.Mp3Encoder) throw new Error('MP3 編碼器載入失敗');
+  const encoder = new window.lamejs.Mp3Encoder(1, buf.sampleRate, 128);
+  const samples = buf.getChannelData(0), parts = [], size = 1152;
+  let yielded = performance.now();
+  for (let i = 0; i < samples.length; i += size) {
+    const pcm = new Int16Array(Math.min(size, samples.length - i));
+    for (let j = 0; j < pcm.length; j++) {
+      const v = Math.max(-1, Math.min(1, samples[i + j]));
+      pcm[j] = Math.round(v * (v < 0 ? 32768 : 32767));
+    }
+    const encoded = encoder.encodeBuffer(pcm);
+    if (encoded.length) parts.push(new Uint8Array(encoded));
+    if (performance.now() - yielded > 20) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      yielded = performance.now();
+    }
+  }
+  const tail = encoder.flush();
+  if (tail.length) parts.push(new Uint8Array(tail));
+  return new Blob(parts, { type: 'audio/mpeg' });
 }
 
 function wavBlob(data, rate) {

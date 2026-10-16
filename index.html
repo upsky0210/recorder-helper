@@ -13,12 +13,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="直笛小幫手">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="stylesheet" href="css/style.css?v=2">
+<link rel="stylesheet" href="css/style.css?v=3">
 </head>
 <body>
 <header class="top">
   <h1><span class="logo">🎵</span>直笛小幫手 <small>國小高音直笛</small></h1>
-  <div class="sys" role="radiogroup" aria-label="指法系統">
+  <div hidden class="sys" role="radiogroup" aria-label="指法系統">
     <button data-sys="english" role="radio">英式</button><button data-sys="german" role="radio">德式</button>
   </div>
 </header>
@@ -133,7 +133,8 @@
 
 <div id="toast" role="status" aria-live="polite"></div>
 
+<script src="vendor/lamejs/lame.min.js?v=1.2.1"></script>
 <script src="vendor/abcjs/abcjs-basic-min.js?v=6.4.4"></script>
-<script type="module" src="js/app.js?v=2"></script>
+<script type="module" src="js/app.js?v=3"></script>
 </body>
 </html>

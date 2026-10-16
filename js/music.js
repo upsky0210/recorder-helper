@@ -1,26 +1,30 @@
 /* 音、指法、分級的共用工具：指法圖（SVG）、五線譜（abcjs） */
-import { NOTES, LEVELS, SYSTEMS } from '../data/fingerings.js?v=2';
+import { NOTES, LEVELS, SYSTEMS } from '../data/fingerings.js?v=3';
 
 export { NOTES, LEVELS, SYSTEMS };
 export const NOTE = Object.fromEntries(NOTES.map((n) => [n.id, n]));
-export const label = (n) => (n.hi ? '高音' : '') + n.sol;
-export const fingerOf = (n, sys) => n?.finger?.[sys] || null;
+export const label = (n) => (n.id.endsWith('6') ? '超高音' : n.hi ? '高音' : '') + n.sol;
+export const fingersOf = (n, sys) => {
+  const f = n?.finger?.[sys];
+  return Array.isArray(f) ? f.filter(Boolean) : f ? [f] : [];
+};
+export const fingerOf = (n, sys) => fingersOf(n, sys)[0] || null;
 export const hasFinger = (n, sys) => !!fingerOf(n, sys);
 
 // 某一級在某個指法系統下用到的音；回傳 { notes, ready, missing }
 export function levelNotes(lv, sys) {
-  const list = lv.all ? NOTES.filter((n) => lv.semi || !n.semi) : lv.notes.map((id) => NOTE[id]).filter(Boolean);
+  const list = lv.all ? NOTES.filter((n) => lv.semi || !n.semi) : (lv.notes || []).map((id) => NOTE[id]).filter(Boolean);
   const missing = list.filter((n) => !hasFinger(n, sys));
-  let ready = list.length >= 3 && !missing.length;
+  let ready = list.length >= 3 && !missing.length && !(lv.pending && !lv.notes?.length);
   if (lv.needSemi && !list.some((n) => n.semi)) ready = false;        // 資料裡還沒有半音
   return { notes: list, ready, missing };
 }
 
-/* 指法字串 → { thumb, holes[7] }，每個值是 'on' | 'off' | 'half' */
+/* 指法字串 → { thumb, holes[7], end }；end 未提供時為 null，其餘是 on／off／half。 */
 export function parseFinger(f) {
-  const [th, fr = ''] = String(f).split('|');
+  const [th, fr = '', end] = String(f).split('|');
   const v = (ch) => (ch === '1' ? 'on' : ch === 'h' ? 'half' : 'off');
-  return { thumb: v(th), holes: [...fr.padEnd(7, '0')].slice(0, 7).map(v) };
+  return { thumb: v(th), holes: [...fr.padEnd(7, '0')].slice(0, 7).map(v), end: end == null ? null : v(end) };
 }
 
 /* 指法圖：直立的直笛，左邊虛線圈是後面的拇指孔，前面 7 個孔，第 6、7 孔是雙孔 */
@@ -28,7 +32,7 @@ export function fingerSVG(f, { h = 150, color = '#1f3a4d', body = '#f6e7c8', sho
   if (!f) {
     return `<svg class="fsvg" viewBox="0 0 64 176" style="height:${h}px" aria-label="等待老師提供"><rect x="22" y="4" width="22" height="168" rx="10" fill="#eee" stroke="#bbb" stroke-dasharray="4 3"/><text x="33" y="94" font-size="22" text-anchor="middle" fill="#aaa">?</text></svg>`;
   }
-  const { thumb, holes } = parseFinger(f);
+  const { thumb, holes, end } = parseFinger(f);
   const ys = [26, 46, 66, 92, 112, 134, 154];
   const fill = (s) => (s === 'on' ? color : '#fff');
   const half = (cx, cy, r) => `<path d="M${cx} ${cy - r} A${r} ${r} 0 0 0 ${cx} ${cy + r} Z" fill="${color}"/>`;
@@ -51,6 +55,10 @@ export function fingerSVG(f, { h = 150, color = '#1f3a4d', body = '#f6e7c8', sho
     if (showNums) s += `<text x="52" y="${y + 3.5}" font-size="10" fill="#8a7a66">${i + 1}</text>`;
   });
   if (showNums) s += `<text x="9" y="${ys[0] + 18}" font-size="9" text-anchor="middle" fill="#8a7a66">0</text>`;
+  if (end != null) {
+    s += `<circle cx="33" cy="168" r="5" fill="${fill(end)}" stroke="${color}" stroke-width="1.5"/><text x="52" y="172" font-size="10" fill="#8a7a66">8</text>`;
+    if (end === 'half') s += half(33, 168, 5);
+  }
   return s + '</svg>';
 }
 

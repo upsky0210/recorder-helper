@@ -14,6 +14,9 @@ try {
   if (raw) { const d = JSON.parse(raw); db = { ...blank(), ...d, prefs: { ...blank().prefs, ...d.prefs }, records: { ...blank().records, ...d.records } }; }
 } catch { /* 讀不到就用空白 */ }
 
+// 目前只有英式課本資料，舊偏好也統一使用英式。
+db.prefs.system = 'english';
+
 export const data = () => db;
 export function save() {
   try { localStorage.setItem(KEY, JSON.stringify(db)); return true; } catch { return false; }
