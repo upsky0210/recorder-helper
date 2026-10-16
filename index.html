@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>直笛小幫手</title>
+<meta name="description" content="國小高音直笛指法表、記憶遊戲、小測驗與小作曲">
+<meta name="theme-color" content="#7b5b3a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="直笛小幫手">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+<header class="top">
+  <h1><span class="logo">🎵</span>直笛小幫手 <small>國小高音直笛</small></h1>
+  <div class="sys" role="radiogroup" aria-label="指法系統">
+    <button data-sys="english" role="radio">英式</button><button data-sys="german" role="radio">德式</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button data-tab="chart" role="tab">🎼<span>指法表</span></button>
+  <button data-tab="memory" role="tab">🧠<span>記憶遊戲</span></button>
+  <button data-tab="quiz" role="tab">❓<span>小測驗</span></button>
+  <button data-tab="compose" role="tab">✏️<span>小作曲</span></button>
+  <button data-tab="works" role="tab">📁<span>我的作品</span></button>
+</nav>
+
+<main>
+  <!-- 指法表 -->
+  <section id="chart" class="pane" hidden>
+    <div class="chart-grid"></div>
+    <div class="detail card"></div>
+    <details class="legend card">
+      <summary>怎麼看指法圖？</summary>
+      <div class="legend-body"></div>
+    </details>
+  </section>
+
+  <!-- 記憶遊戲 -->
+  <section id="memory" class="pane" hidden>
+    <div class="levels"></div>
+    <div class="card game">
+      <div class="gtop"><b class="lv">準備好了嗎？</b><span class="lives"></span><span class="best"></span></div>
+      <div class="prog"></div>
+      <div class="msg">老師會吹一段旋律，你照順序按回去！每過一關多一個音。</div>
+      <div class="keys"></div>
+      <div class="gfoot"><button class="big go">▶ 開始</button><span class="hint">電腦可以按數字鍵 1、2、3…</span></div>
+    </div>
+  </section>
+
+  <!-- 小測驗 -->
+  <section id="quiz" class="pane" hidden>
+    <div class="qmodes">
+      <button data-qm="f2n" class="big">👀 看指法猜音</button>
+      <button data-qm="s2f" class="big">🎼 看五線譜選指法</button>
+    </div>
+    <div class="levels"></div>
+    <div class="card qbox">
+      <div class="gtop"><b class="qno"></b><span class="qscore"></span><span class="best"></span></div>
+      <div class="qask"></div>
+      <div class="qopts"></div>
+      <div class="msg"></div>
+      <div class="gfoot"><button class="big go">▶ 開始測驗</button></div>
+    </div>
+  </section>
+
+  <!-- 小作曲 -->
+  <section id="compose" class="pane" hidden>
+    <div class="card cmeta">
+      <label>曲名 <input class="title" maxlength="30"></label>
+      <label>拍號 <select class="meter"><option>4/4</option><option>3/4</option><option>2/4</option></select></label>
+      <label>小節 <select class="bars"><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></label>
+      <label>速度 <input class="tempo" type="range" min="60" max="140" step="5"><output class="tempoV"></output></label>
+    </div>
+    <div class="card score">
+      <div class="staff"></div>
+      <div class="frow"></div>
+      <div class="status"></div>
+    </div>
+    <div class="card palette">
+      <div class="durs"></div>
+      <div class="pitches"></div>
+      <div class="ctrls">
+        <button class="big play">▶ 播放</button>
+        <button class="big del">⌫ 刪除</button>
+        <button class="big clear">🗑 清空</button>
+        <button class="big savew">💾 儲存</button>
+        <button class="big out">📤 輸出／分享</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 我的作品 -->
+  <section id="works" class="pane" hidden>
+    <div class="card profile">
+      <h2>我的資料 <small>只存在這台裝置，不會上傳</small></h2>
+      <label>班級 <input class="cls" inputmode="numeric" maxlength="6" placeholder="例：501"></label>
+      <label>座號 <input class="seat" inputmode="numeric" maxlength="3" placeholder="例：7"></label>
+      <label>姓名 <input class="name" maxlength="12" placeholder="你的名字"></label>
+    </div>
+    <div class="card">
+      <div class="wtools">
+        <h2>作品</h2>
+        <button class="big neww">✏️ 寫新作品</button>
+        <label class="big imp">📥 匯入作品檔<input type="file" accept=".json,application/json" hidden></label>
+      </div>
+      <ul class="wlist"></ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  設計者 Upsky（阿喵老師）／工具 Claude Code
+  <span class="note">iPad 沒有聲音？請檢查側邊靜音開關和音量。</span>
+</footer>
+
+<dialog id="outDlg">
+  <form method="dialog" class="dlg">
+    <h2>輸出／分享作品</h2>
+    <div class="preview"><img alt="作品卡預覽"></div>
+    <p class="who"></p>
+    <div class="outs"></div>
+    <p class="tip">按「分享」可以選 Gmail、Google Classroom，或「儲存到檔案」存到 Google 雲端硬碟、Synology NAS。</p>
+    <button class="big close" value="close">關閉</button>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="vendor/abcjs/abcjs-basic-min.js?v=6.4.4"></script>
+<script type="module" src="js/app.js?v=2"></script>
+</body>
+</html>
