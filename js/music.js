@@ -1,5 +1,5 @@
 /* 音、指法、分級的共用工具：指法圖（SVG）、五線譜（abcjs） */
-import { NOTES, LEVELS, SYSTEMS } from '../data/fingerings.js?v=3';
+import { NOTES, LEVELS, SYSTEMS } from '../data/fingerings.js?v=4';
 
 export { NOTES, LEVELS, SYSTEMS };
 export const NOTE = Object.fromEntries(NOTES.map((n) => [n.id, n]));

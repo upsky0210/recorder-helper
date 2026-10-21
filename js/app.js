@@ -1,7 +1,7 @@
 /* 直笛小幫手 主程式：指法表、記憶遊戲、小測驗、小作曲、我的作品 */
-import { NOTES, NOTE, LEVELS, SYSTEMS, label, fingersOf, fingerOf, hasFinger, levelNotes, fingerSVG, staffSVG, singleNoteAbc, SINGLE } from './music.js?v=3';
-import { playNote, playMelody, renderWav, renderAudio, renderMp3 } from './audio.js?v=3';
-import * as store from './store.js?v=3';
+import { NOTES, NOTE, LEVELS, SYSTEMS, label, fingersOf, fingerOf, hasFinger, levelNotes, fingerSVG, staffSVG, singleNoteAbc, SINGLE } from './music.js?v=4';
+import { playNote, playMelody, renderWav, renderAudio, renderMp3 } from './audio.js?v=4';
+import * as store from './store.js?v=4';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -49,8 +49,13 @@ $$('.sys button').forEach((b) => (b.onclick = () => { setSys(b.dataset.sys); com
 function levelPicker(root, cur, onPick) {
   root.innerHTML = LEVELS.map((lv) => {
     const { ready } = levelNotes(lv, sys());
-    return `<button data-lv="${lv.id}" ${ready ? '' : 'disabled'} class="${lv.id === cur ? 'sel' : ''} ${ready ? '' : 'wait'}"><b>${lv.label}</b><small>${lv.desc}</small>${ready ? '' : `<span class="w">⏳ 等待老師提供${lv.pending && !lv.notes?.length ? '進度' : '指法'}</span>`}</button>`;
+    return `<button data-lv="${lv.id}" ${ready ? '' : 'disabled'} class="${lv.id === cur ? 'sel' : ''} ${ready ? '' : 'wait'}"><b>${lv.label}</b><small>${lv.desc}</small>${lv.provisional ? '<span class="trial">試用版・進度待老師確認</span>' : ''}${ready ? '' : `<span class="w">⏳ 等待老師提供${lv.pending && !lv.notes?.length ? '進度' : '指法'}</span>`}</button>`;
   }).join('');
+  const selected = LEVELS.find((lv) => lv.id === cur);
+  if (selected?.provisional) {
+    const notes = levelNotes(selected, sys()).notes.map((n) => label(n)).join('、');
+    root.insertAdjacentHTML('beforeend', `<div class="level-preview"><b>進度暫定，待老師確認</b><p>這級練習：${esc(notes)}</p><small>先依目前提供的範圍試排，請老師協助確認；未確定的音暫不加入。</small></div>`);
+  }
   $$('button', root).forEach((b) => (b.onclick = () => {
     const lv = LEVELS.find((l) => l.id === b.dataset.lv);
     if (!levelNotes(lv, sys()).ready) { toast(`「${lv.label}」還在等音樂老師提供${sysLabel()}指法喔`); return; }

@@ -27,6 +27,7 @@
  *
  * 分級 LEVELS：notes 列出這一級用到的音 id；all: true 表示用全部音（仍須確認指法齊全）。
  *   年級 notes 為 null 時顯示等待進度；老師提供後填入音 id 即可啟用，不必移除 pending。
+ *   provisional: true 表示依使用者提供範圍試排，畫面必須標示進度暫定，待老師確認。
  *   只要該級有任何一個音在目前選的指法（英式／德式）沒有資料，那一級就會顯示「等待老師提供」。
  */
 
@@ -76,16 +77,16 @@ export const LEVELS = [
   {
     "id": "kangxuan",
     "label": "康軒三四年級",
-    "desc": "等待音樂老師提供各年級進度",
-    "notes": null,
-    "pending": "等待音樂老師提供各年級進度"
+    "desc": "低音 Do～高音 Re＋升 Fa（10 音）",
+    "notes": ["C4", "D4", "E4", "F4", "F#4", "G4", "A4", "B4", "C5", "D5"],
+    "provisional": true
   },
   {
     "id": "hanlin",
     "label": "翰林五六年級",
-    "desc": "等待音樂老師提供各年級進度",
-    "notes": null,
-    "pending": "等待音樂老師提供各年級進度"
+    "desc": "低音 Do～Si＋高音 Do、Re、Fa、Sol、La（12 音）",
+    "notes": ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "F5", "G5", "A5"],
+    "provisional": true
   },
   {
     "id": "full",

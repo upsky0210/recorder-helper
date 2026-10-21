@@ -169,3 +169,6 @@ footer .note { font-size: 12px; opacity: .8; }
 .dfing { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 .dfing figure { margin: 0; text-align: center; }
 .levels button:disabled { cursor: default; }
+.levels .trial { display: block; margin-top: 6px; color: #795200; font-size: 12px; font-weight: 700; }
+.level-preview { grid-column: 1 / -1; padding: 14px 16px; border: 1px solid #d9bb70; border-radius: 12px; background: #fff8e7; color: #63491d; }
+.level-preview p { margin: 8px 0; line-height: 1.7; }

@@ -22,14 +22,41 @@ const assert = require('node:assert/strict');
   }
   await page.screenshot({ path: 'docs/iPad-指法表.png', fullPage: true });
   await page.locator('[data-tab="memory"]').click();
-  for (const id of ['kangxuan','hanlin','full','semi']) assert.equal(await page.locator(`#memory [data-lv="${id}"]`).isDisabled(), true);
-  assert.match(await page.locator('#memory [data-lv="kangxuan"]').innerText(), /等待老師提供進度/);
+  for (const id of ['full','semi']) assert.equal(await page.locator(`#memory [data-lv="${id}"]`).isDisabled(), true);
+  for (const [id,count] of [['kangxuan',10],['hanlin',12]]) {
+    await page.locator('[data-tab="memory"]').click();
+    assert.equal(await page.locator(`#memory [data-lv="${id}"]`).isDisabled(), false);
+    await page.locator(`#memory [data-lv="${id}"]`).click();
+    assert.match(await page.locator('#memory .level-preview').innerText(), /進度暫定，待老師確認/);
+    assert.equal(await page.locator('#memory .keys .nbtn').count(),count);
+    assert.equal(await page.locator('#memory .keys .nbtn.wait').count(),0);
+    await page.locator('#memory .go').click();
+    await page.waitForFunction(()=>window.__rh.memory.listening);
+    const seq=await page.evaluate(()=>window.__rh.memory.seq);
+    for(const k of seq) await page.locator(`#memory .keys [data-k="${k}"]`).click();
+    assert.match(await page.locator('#memory .msg').innerText(), /下一關多一個音/);
+    await page.screenshot({path:`docs/iPad-${id}-記憶遊戲.png`,fullPage:true});
+    await page.locator('[data-tab="quiz"]').click();
+    await page.locator(`#quiz [data-lv="${id}"]`).click();
+    for(const mode of ['f2n','s2f']) {
+      await page.locator(`[data-qm="${mode}"]`).click();
+      await page.locator('#quiz .go').click();
+      assert.equal(await page.evaluate(()=>window.__rh.quiz.pool.length),count);
+      const answer=await page.evaluate(()=>window.__rh.quiz.qs[0].id);
+      await page.locator(`#quiz .qopts [data-id="${answer}"]`).click();
+      assert.equal(await page.evaluate(()=>window.__rh.quiz.score),1);
+    }
+    await page.screenshot({path:`docs/iPad-${id}-小測驗.png`,fullPage:true});
+  }
+  await page.locator('[data-tab="memory"]').click();
+  await page.locator('#memory [data-lv="starter"]').click();
   await page.locator('#memory .go').click();
   await page.waitForFunction(() => window.__rh.memory.listening);
   const sequence=await page.evaluate(()=>window.__rh.memory.seq);
   for(const k of sequence) await page.locator(`#memory .keys [data-k="${k}"]`).click();
   assert.match(await page.locator('#memory .msg').innerText(), /下一關多一個音/);
   await page.locator('[data-tab="quiz"]').click();
+  await page.locator('#quiz [data-lv="starter"]').click();
   for (const mode of ['f2n','s2f']) {
     await page.locator(`[data-qm="${mode}"]`).click();
     await page.locator('#quiz .go').click();
@@ -101,7 +128,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.evaluate(()=>window.__rh.compose.w.system),'english');
   // 產生自行繪製的指法對照圖，不含課本掃描。
   const svg = await page.evaluate(async () => {
-    const {NOTES,fingersOf,fingerSVG,label}=await import('/js/music.js?v=3');
+    const {NOTES,fingersOf,fingerSVG,label}=await import('/js/music.js?v=4');
     const esc=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;');
     const cells=NOTES.map((n,i)=>{
       const x=20+(i%9)*155,y=90+Math.floor(i/9)*340, fs=fingersOf(n,'english');
@@ -113,8 +140,8 @@ const assert = require('node:assert/strict');
   const report=await context.newPage(); await report.setContent(`<html><body style="margin:0">${svg}</body></html>`);
   await report.setViewportSize({width:1435,height:1150});
   await report.screenshot({path:'docs/指法轉錄對照.png',fullPage:true});
-  const worker=await page.evaluate(async()=>{await navigator.serviceWorker.ready;const keys=await caches.keys();return {keys,files:await (await caches.open('rh-v3')).keys().then(a=>a.map(r=>r.url))};});
-  assert.ok(worker.keys.includes('rh-v3'));assert.ok(worker.files.some(u=>u.includes('lame.min.js')));
+  const worker=await page.evaluate(async()=>{await navigator.serviceWorker.ready;const keys=await caches.keys();return {keys,files:await (await caches.open('rh-v4')).keys().then(a=>a.map(r=>r.url))};});
+  assert.ok(worker.keys.includes('rh-v4'));assert.ok(worker.files.some(u=>u.includes('lame.min.js')));
   await context.setOffline(true);
   await page.reload();await page.waitForFunction(()=>window.__rh);
   assert.equal(await page.evaluate(()=>typeof window.lamejs.Mp3Encoder),'function');
