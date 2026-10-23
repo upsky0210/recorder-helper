@@ -1,5 +1,5 @@
 /* 音、指法、分級的共用工具：指法圖（SVG）、五線譜（abcjs） */
-import { NOTES, LEVELS, SYSTEMS } from '../data/fingerings.js?v=4';
+import { NOTES, LEVELS, SYSTEMS } from '../data/fingerings.js?v=5';
 
 export { NOTES, LEVELS, SYSTEMS };
 export const NOTE = Object.fromEntries(NOTES.map((n) => [n.id, n]));
@@ -40,8 +40,9 @@ export function fingerSVG(f, { h = 150, color = '#1f3a4d', body = '#f6e7c8', sho
   s += `<rect x="22" y="4" width="22" height="168" rx="10" fill="${body}" stroke="#a08055" stroke-width="1.5"/>`;
   s += `<rect x="25" y="4" width="16" height="8" rx="3" fill="#e2c99a"/>`;
   // 後面拇指孔（虛線）
-  s += `<circle cx="9" cy="${ys[0]}" r="6.5" fill="${fill(thumb)}" stroke="${color}" stroke-width="1.6"${thumb === 'on' ? '' : ' stroke-dasharray="2.6 1.8"'}/>`;
-  if (thumb === 'half') s += half(9, ys[0], 6.5);
+  s += `<circle cx="9" cy="${ys[0]}" r="6.5" fill="${fill(thumb)}" stroke="${color}" stroke-width="1.6"${thumb === 'off' ? ' stroke-dasharray="2.6 1.8"' : ''}/>`;
+  // 拇指留一細縫：上方白色小弓形；前方單孔仍使用半孔圖示。
+  if (thumb === 'half') s += `<path d="M3.8 ${ys[0] - 3.9} L14.2 ${ys[0] - 3.9} A6.5 6.5 0 1 1 3.8 ${ys[0] - 3.9} Z" fill="${color}"/>`;
   s += `<line x1="15.5" y1="${ys[0]}" x2="21" y2="${ys[0]}" stroke="#a08055" stroke-width="1" stroke-dasharray="2 2"/>`;
   holes.forEach((st, i) => {
     const y = ys[i];

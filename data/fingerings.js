@@ -16,14 +16,14 @@
  *   finger  { english: 英式（巴洛克式）指法, german: 德式指法 }，沒有資料填 null
  *
  * 指法字串格式：'後面拇指孔|前面 1～7 孔'，例：'1|1110000'
- *   第 1 個字元：後面拇指孔   1 按住、0 打開、h 半孔（拇指只蓋一半）
+ *   第 1 個字元：後面拇指孔   1 按住、0 打開、h 留一細縫（拇指孔）
  *   | 後面 7 個字元：前面由上（左手食指）往下第 1～7 孔
  *       第 1～5 孔：1 按住、0 打開、h 按一半
  *       第 6、7 孔是雙孔：1 兩個小孔都按住、h 只按住一個（按一半）、0 都打開
  *
  * english 可放字串或陣列；陣列依序是指法 I、II，遊戲與測驗使用第一個。
- * 笛尾第 8 孔選填第三段，例如 'h|1011011|1'；1 表示蓋住笛尾、0 打開。
- * D6 的拇指與第 1 孔受筆跡干擾，整筆指法留 null；不可推測。
+ * 笛尾第 8 孔選填第三段，例如 'h|1001100|1'；1 表示蓋住笛尾、0 打開。
+ * 2026-10-23 依老師提供的清晰指法表逐音核對，27 音英式指法齊全；詳見 docs/英式指法校正.md。
  *
  * 分級 LEVELS：notes 列出這一級用到的音 id；all: true 表示用全部音（仍須確認指法齊全）。
  *   年級 notes 為 null 時顯示等待進度；老師提供後填入音 id 即可啟用，不必移除 pending。
@@ -42,7 +42,7 @@ export const NOTES = [
   {"id": "G4", "sol": "Sol", "name": "G", "abc": "G", "hz": 783.99, "color": "#ef5350", "finger": {"english": "1|1110000", "german": null}},
   {"id": "G#4", "sol": "升Sol", "name": "G♯／A♭", "abc": "^G", "hz": 830.61, "color": "#ef5350", "finger": {"english": "1|11011h0", "german": null}, "semi": true},
   {"id": "A4", "sol": "La", "name": "A", "abc": "A", "hz": 880.0, "color": "#ffa726", "finger": {"english": "1|1100000", "german": null}},
-  {"id": "A#4", "sol": "升La", "name": "A♯／B♭", "abc": "^A", "hz": 932.33, "color": "#ffa726", "finger": {"english": ["1|1011010", "1|1010110"], "german": null}, "semi": true},
+  {"id": "A#4", "sol": "升La", "name": "A♯／B♭", "abc": "^A", "hz": 932.33, "color": "#ffa726", "finger": {"english": ["1|1011000", "1|1011010"], "german": null}, "semi": true},
   {"id": "B4", "sol": "Si", "name": "B", "abc": "B", "hz": 987.77, "color": "#fdd835", "finger": {"english": ["1|1000000", "1|0110000"], "german": null}},
   {"id": "C5", "sol": "Do", "name": "C", "abc": "c", "hz": 1046.5, "color": "#66bb6a", "finger": {"english": "1|0100000", "german": null}, "hi": true},
   {"id": "C#5", "sol": "升Do", "name": "C♯／D♭", "abc": "^c", "hz": 1108.73, "color": "#ec407a", "finger": {"english": ["0|1100000", "1|0000000"], "german": null}, "hi": true, "semi": true},
@@ -57,8 +57,8 @@ export const NOTES = [
   {"id": "A#5", "sol": "升La", "name": "A♯／B♭", "abc": "^a", "hz": 1864.66, "color": "#ffa726", "finger": {"english": "h|1101110", "german": null}, "hi": true, "semi": true},
   {"id": "B5", "sol": "Si", "name": "B", "abc": "b", "hz": 1975.53, "color": "#fdd835", "finger": {"english": "h|1101100", "german": null}, "hi": true},
   {"id": "C6", "sol": "Do", "name": "C", "abc": "c'", "hz": 2093.0, "color": "#ec407a", "finger": {"english": "h|1001100", "german": null}, "hi": true},
-  {"id": "C#6", "sol": "升Do", "name": "C♯／D♭", "abc": "^c'", "hz": 2217.46, "color": "#ec407a", "finger": {"english": "h|1011011|1", "german": null}, "hi": true, "semi": true},
-  {"id": "D6", "sol": "Re", "name": "D", "abc": "d'", "hz": 2349.32, "color": "#ab47bc", "finger": {"english": null, "german": null}, "hi": true},
+  {"id": "C#6", "sol": "升Do", "name": "C♯／D♭", "abc": "^c'", "hz": 2217.46, "color": "#ec407a", "finger": {"english": "h|1001100|1", "german": null}, "hi": true, "semi": true},
+  {"id": "D6", "sol": "Re", "name": "D", "abc": "d'", "hz": 2349.32, "color": "#ab47bc", "finger": {"english": "h|101101h", "german": null}, "hi": true},
 ];
 
 export const LEVELS = [

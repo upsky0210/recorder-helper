@@ -1,7 +1,7 @@
 /* 直笛小幫手 主程式：指法表、記憶遊戲、小測驗、小作曲、我的作品 */
-import { NOTES, NOTE, LEVELS, SYSTEMS, label, fingersOf, fingerOf, hasFinger, levelNotes, fingerSVG, staffSVG, singleNoteAbc, SINGLE } from './music.js?v=4';
-import { playNote, playMelody, renderWav, renderAudio, renderMp3 } from './audio.js?v=4';
-import * as store from './store.js?v=4';
+import { NOTES, NOTE, LEVELS, SYSTEMS, label, fingersOf, fingerOf, hasFinger, levelNotes, fingerSVG, staffSVG, singleNoteAbc, SINGLE } from './music.js?v=5';
+import { playNote, playMelody, renderWav, renderAudio, renderMp3 } from './audio.js?v=5';
+import * as store from './store.js?v=5';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -79,11 +79,12 @@ const chart = {
       <ul>
         <li>${g(`<circle cx="15" cy="15" r="9" fill="${C}" stroke="${C}" stroke-width="2"/>`)} 塗黑：按住</li>
         <li>${g(`<circle cx="15" cy="15" r="9" fill="#fff" stroke="${C}" stroke-width="2"/>`)} 空心：打開</li>
-        <li>${g(`<circle cx="15" cy="15" r="9" fill="#fff" stroke="${C}" stroke-width="2"/><path d="M15 6 A9 9 0 0 0 15 24 Z" fill="${C}"/>`)} 塗一半：半孔（按一半）</li>
+        <li>${g(`<circle cx="15" cy="15" r="9" fill="#fff" stroke="${C}" stroke-width="2"/><path d="M15 6 A9 9 0 0 0 15 24 Z" fill="${C}"/>`)} 塗一半：前方單孔的半孔示意</li>
         <li>${g(`<circle cx="15" cy="15" r="9" fill="#fff" stroke="${C}" stroke-width="2" stroke-dasharray="3 2"/>`)} 左邊虛線圈（0）：笛子<b>後面</b>的拇指孔</li>
-        <li>第 6、7 孔是兩個小孔：兩個都塗黑＝全按；只塗大的＝按一半</li>
+        <li>拇指孔上方留白縫：留一細縫，不是打開一半</li>
+        <li>第 6、7 孔是兩個小孔：兩個都塗黑＝全按；只塗大的＝只按住一個小孔</li>
         <li>第 8 孔是笛尾：塗黑表示用膝蓋或手蓋住</li>
-        <li>目前是<b>${sysLabel()}</b>指法；德式等待老師提供</li>
+        <li>目前是<b>${sysLabel()}</b>指法</li>
       </ul>`;
   },
   detail() {
@@ -218,8 +219,9 @@ const quiz = {
     this.stop();
     $('#quiz .go').hidden = true;
     this.i = 0; this.score = 0;
-    // 每個音輪流出現，再打亂
-    this.qs = shuffle(Array.from({ length: this.total }, (_, i) => this.pool[i % this.pool.length]));
+    // 先打亂音池，完整音域超過 10 音時，每個音也都有機會出題。
+    const pool = shuffle(this.pool);
+    this.qs = shuffle(Array.from({ length: this.total }, (_, i) => pool[i % pool.length]));
     this.ask();
   },
   ask() {

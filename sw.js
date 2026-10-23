@@ -1,8 +1,8 @@
 /* 直笛小幫手 service worker：第一次載入後把全部檔案存起來，之後沒網路也能用。
    有網路時先抓新的（老師更新後馬上看得到），抓不到再用存起來的。改檔案時：index.html、js/*.js、data/fingerings.js 裡的 ?v= 一起加 1，這裡的 FILES 和 VERSION 也跟著改。 */
-const VERSION = 'rh-v4';
+const VERSION = 'rh-v5';
 const FILES = [
-  './', 'index.html', 'css/style.css?v=4', 'js/app.js?v=4', 'js/music.js?v=4', 'js/audio.js?v=4', 'js/store.js?v=4', 'data/fingerings.js?v=4',
+  './', 'index.html', 'css/style.css?v=5', 'js/app.js?v=5', 'js/music.js?v=5', 'js/audio.js?v=5', 'js/store.js?v=5', 'data/fingerings.js?v=5',
   'vendor/lamejs/lame.min.js?v=1.2.1', 'vendor/abcjs/abcjs-basic-min.js?v=6.4.4', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 self.addEventListener('install', (e) => {
