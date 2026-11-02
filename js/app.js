@@ -1,7 +1,7 @@
 /* 直笛小幫手 主程式：指法表、記憶遊戲、小測驗、小作曲、我的作品 */
-import { NOTES, NOTE, LEVELS, SYSTEMS, label, fingersOf, fingerOf, hasFinger, levelNotes, fingerSVG, staffSVG, singleNoteAbc, SINGLE } from './music.js?v=5';
-import { playNote, playMelody, renderWav, renderAudio, renderMp3 } from './audio.js?v=5';
-import * as store from './store.js?v=5';
+import { NOTES, NOTE, LEVELS, SYSTEMS, label, fingersOf, fingerOf, hasFinger, levelNotes, fingerSVG, staffSVG, singleNoteAbc, SINGLE } from './music.js?v=6';
+import { playNote, playMelody, renderWav, renderAudio, renderMp3 } from './audio.js?v=6';
+import * as store from './store.js?v=6';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -304,7 +304,7 @@ function workAbc(w, { tempo = false } = {}) {
     charMap.set(abc.length, i);
     abc += tok;
     const end = pos + n.d, nx = w.notes[i + 1];
-    if (end === upb) abc += ' | ';
+    if (end === upb) abc += (L.out[i].bar + 1) % 4 === 0 ? ' |\n' : ' | ';
     else if (!(n.d === 1 && pos % 2 === 0 && nx?.d === 1 && nx.p !== 'rest' && n.p !== 'rest')) abc += ' ';   // 同一拍的兩個八分音符連在一起
   });
   // 還沒寫的地方用看不見的休止符（x）佔位，讓小節數看得出來
@@ -312,6 +312,7 @@ function workAbc(w, { tempo = false } = {}) {
   while (bar < w.bars) {
     abc += `x${upb - pos} | `;
     bar++; pos = 0;
+    if (bar % 4 === 0) abc += '\n';
   }
   abc = abc.replace(/\|\s*$/, '|]');
   if (!w.notes.length && !abc.includes('x')) abc += '|]';
@@ -319,6 +320,13 @@ function workAbc(w, { tempo = false } = {}) {
 }
 
 const noteLabel = (p) => (p === 'rest' ? '休止' : label(NOTE[p]));
+// 作曲模式獨立於遊戲年級；簡易版依老師截圖保留十二音。
+const COMPOSE_NOTES = {
+  starter: ['G4', 'A4', 'B4', 'C5', 'D5'],
+  simple: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'F5', 'G5', 'A5'],
+};
+const TEMPOS = [[56, '慢板'], [66, '行板'], [76, '小行板'], [88, '中板'], [96, '稍快板'], [120, '快板']];
+const tempoName = (v) => v < 56 || v > 152 ? '自訂速度' : TEMPOS.filter(([n]) => v >= n).at(-1)[1];
 
 const compose = {
   w: null, sel: -1, dur: 2, stopFn: null,
@@ -334,15 +342,33 @@ const compose = {
   render() {
     this.ensure();
     const pane = $('#compose'), w = this.w;
+    w.composeMode ||= 'full';
+    $('.cmode', pane).value = w.composeMode;
+    $('.cmode', pane).onchange = (e) => {
+      this.stop();
+      w.composeMode = e.target.value; db.prefs.composeMode = w.composeMode;
+      // 只在空白作品切換預設長度；已有音符時完整保留。
+      if (!w.notes.length) w.bars = w.composeMode === 'full' ? 8 : 4;
+      this.draft(); this.render();
+    };
     $('.title', pane).value = w.title;
     $('.title', pane).oninput = (e) => { w.title = e.target.value; this.draft(); };
     $('.meter', pane).value = w.meter;
     $('.meter', pane).onchange = (e) => this.tryChange(() => (w.meter = e.target.value), '改拍號後有音會跨小節，請先調整或清空');
     $('.bars', pane).value = w.bars;
     $('.bars', pane).onchange = (e) => this.tryChange(() => (w.bars = +e.target.value), '音太多了，請先刪掉後面的音再減少小節');
-    $('.tempo', pane).value = w.tempo; $('.tempoV', pane).textContent = `♩=${w.tempo}`;
-    $('.tempo', pane).oninput = (e) => { w.tempo = +e.target.value; $('.tempoV', pane).textContent = `♩=${w.tempo}`; this.draft(); };
-    $('.pitches', pane).innerHTML = NOTES.filter((n) => hasFinger(n, sys())).map((n) => noteBtn(n, { h: 54 })).join('')
+    const tempo = $('.tempo', pane), preset = $('.tempoPreset', pane);
+    // 舊作品可能有 50～160 的速度，不因新版介面而改寫。
+    tempo.min = Math.min(56, w.tempo); tempo.max = Math.max(152, w.tempo);
+    const showTempo = () => {
+      tempo.value = w.tempo; $('.tempoV', pane).textContent = `♩=${w.tempo}　${tempoName(w.tempo)}`;
+      preset.value = TEMPOS.find(([, name]) => name === tempoName(w.tempo))?.[0] ?? '';
+    };
+    showTempo();
+    tempo.oninput = (e) => { this.stop(); w.tempo = +e.target.value; showTempo(); this.draft(); };
+    preset.onchange = () => { if (!preset.value) return; this.stop(); w.tempo = +preset.value; showTempo(); this.draft(); };
+    const available = COMPOSE_NOTES[w.composeMode];
+    $('.pitches', pane).innerHTML = NOTES.filter((n) => hasFinger(n, sys()) && (!available || available.includes(n.id))).map((n) => noteBtn(n, { h: 54 })).join('')
       + '<button class="nbtn rest" data-id="rest"><b>休止符</b><small>不吹</small></button>';
     $$('.pitches .nbtn', pane).forEach((b) => (b.onclick = () => this.pick(b.dataset.id)));
     $('.play', pane).onclick = () => (this.stopFn ? this.stop() : this.play());
@@ -404,7 +430,7 @@ const compose = {
     // 五線譜
     const { abc, charMap } = workAbc(w);
     const tune = staffSVG($('.staff', pane), abc, {
-      staffwidth: 760, wrap: { minSpacing: 1.8, maxSpacing: 2.8, preferredMeasuresPerLine: 4 },
+      staffwidth: 760,
       clickListener: (el) => { const i = charMap.get(el.startChar); if (i == null) return; this.sel = this.sel === i ? -1 : i; this.update(); },
     });
     this.els = new Map();
@@ -470,7 +496,7 @@ async function cardPng(w) {
   tmp.style.cssText = 'position:absolute;left:-10000px;top:0;width:1100px';
   document.body.appendChild(tmp);
   const { abc } = workAbc(w, { tempo: true });
-  window.ABCJS?.renderAbc(tmp, abc, { staffwidth: 1080, scale: 1.25, wrap: { minSpacing: 1.8, maxSpacing: 2.8, preferredMeasuresPerLine: 4 }, paddingtop: 0, paddingbottom: 0 });
+  window.ABCJS?.renderAbc(tmp, abc, { staffwidth: 1080, scale: 1.25, paddingtop: 0, paddingbottom: 0 });
   const sv = tmp.querySelector('svg');
   let staff = '', sh = 0;
   if (sv) {

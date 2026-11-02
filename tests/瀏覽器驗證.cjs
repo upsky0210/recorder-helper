@@ -17,7 +17,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('#chart .chart-grid .nbtn').count(), 27);
   assert.equal(await page.locator('#chart .nbtn.wait').count(), 0);
   const verified = await page.evaluate(async () => {
-    const { NOTE, NOTES, LEVELS, levelNotes } = await import('/js/music.js?v=5');
+    const { NOTE, NOTES, LEVELS, levelNotes } = await import('/js/music.js?v=6');
     return {
       corrected: ['A#4','C#6','D6'].map(id => NOTE[id].finger.english),
       germanEmpty: NOTES.every(n => n.finger.german === null),
@@ -87,10 +87,30 @@ const assert = require('node:assert/strict');
     assert.match(await page.locator('#quiz .msg').innerText(), /答對 10 \/ 10/);
   }
   await page.locator('[data-tab="compose"]').click();
+  assert.equal(await page.locator('#compose .pitches .nbtn:not(.rest)').count(), 5);
+  await page.locator('#compose .cmode').selectOption('simple');
+  assert.equal(await page.locator('#compose .pitches .nbtn:not(.rest)').count(), 12);
+  await page.locator('#compose .cmode').selectOption('full');
+  assert.equal(await page.locator('#compose .bars').inputValue(), '8');
   assert.equal(await page.locator('#compose .pitches .nbtn:not(.rest)').count(), 27);
+  for(const [value,name] of [['56','慢板'],['66','行板'],['76','小行板'],['88','中板'],['96','稍快板'],['120','快板']]) {
+    await page.locator('#compose .tempoPreset').selectOption(value);
+    assert.match(await page.locator('#compose .tempoV').innerText(),new RegExp(name));
+  }
+  for(const value of [56,152]) {
+    await page.locator('#compose .tempo').fill(String(value));
+    const duration=await page.evaluate(async()=>{const r=window.__rh;const blob=await r.renderMp3([{hz:783.99,beats:1}],r.compose.w.tempo);const ac=new AudioContext();const buf=await ac.decodeAudioData(await blob.arrayBuffer());await ac.close();return buf.duration;});
+    assert.ok(Math.abs(duration-(60/value+0.8))<0.1);
+  }
+  await page.locator('#compose .tempo').fill('90');
   await page.locator('#compose [data-d="8"]').click();
-  for(const id of ['A#4','C#6','D6','C5']) await page.locator(`#compose .pitches [data-id="${id}"]`).click();
+  for(const id of ['A#4','C#6','D6','C5','G4','A4','B4','C5']) await page.locator(`#compose .pitches [data-id="${id}"]`).click();
   assert.match(await page.locator('#compose .status').innerText(), /小節都寫好了/);
+  const originalNotes=await page.evaluate(()=>JSON.stringify(window.__rh.compose.w.notes));
+  await page.locator('#compose .cmode').selectOption('starter');
+  assert.equal(await page.evaluate(()=>JSON.stringify(window.__rh.compose.w.notes)),originalNotes);
+  assert.equal(await page.locator('#compose .bars').inputValue(),'8');
+  await page.locator('#compose .cmode').selectOption('full');
   await page.locator('#compose .staff .abcjs-note').first().click();
   assert.match(await page.locator('#compose .status').innerText(), /已選第 1 個音/);
   await page.locator('#compose .pitches [data-id="D4"]').click();
@@ -106,7 +126,7 @@ const assert = require('node:assert/strict');
     const ac=new AudioContext();
     const decoded=await ac.decodeAudioData(await mp3.arrayBuffer());
     const decodedWav=await ac.decodeAudioData(await wav.arrayBuffer());
-    const expected=16*60/90+0.8;
+    const expected=32*60/90+0.8;
     await ac.close();
     return { mime:mp3.type,size:mp3.size,duration:decoded.duration,wavDuration:decodedWav.duration,expected };
   });
@@ -147,7 +167,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.evaluate(()=>window.__rh.compose.w.system),'english');
   // 產生自行繪製的指法對照圖，不含課本掃描。
   const svg = await page.evaluate(async () => {
-    const {NOTES,fingersOf,fingerSVG,label}=await import('/js/music.js?v=5');
+    const {NOTES,fingersOf,fingerSVG,label}=await import('/js/music.js?v=6');
     const esc=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;');
     const cells=NOTES.map((n,i)=>{
       const x=20+(i%9)*155,y=90+Math.floor(i/9)*340, fs=fingersOf(n,'english');
@@ -159,12 +179,12 @@ const assert = require('node:assert/strict');
   const report=await context.newPage(); await report.setContent(`<html><body style="margin:0">${svg}</body></html>`);
   await report.setViewportSize({width:1435,height:1150});
   await report.screenshot({path:'docs/指法轉錄對照.png',fullPage:true});
-  const worker=await page.evaluate(async()=>{await navigator.serviceWorker.ready;const keys=await caches.keys();return {keys,files:await (await caches.open('rh-v5')).keys().then(a=>a.map(r=>r.url))};});
-  assert.ok(worker.keys.includes('rh-v5'));assert.ok(worker.files.some(u=>u.includes('lame.min.js')));
+  const worker=await page.evaluate(async()=>{await navigator.serviceWorker.ready;const keys=await caches.keys();return {keys,files:await (await caches.open('rh-v6')).keys().then(a=>a.map(r=>r.url))};});
+  assert.ok(worker.keys.includes('rh-v6'));assert.ok(worker.files.some(u=>u.includes('lame.min.js')));
   await context.setOffline(true);
   await page.reload();await page.waitForFunction(()=>window.__rh);
   assert.equal(await page.evaluate(()=>typeof window.lamejs.Mp3Encoder),'function');
-  assert.equal(await page.evaluate(async () => (await import('/js/music.js?v=5')).NOTE.D6.finger.english), 'h|101101h');
+  assert.equal(await page.evaluate(async () => (await import('/js/music.js?v=6')).NOTE.D6.finger.english), 'h|101101h');
   await context.setOffline(false);
   const privatePage=await browser.newPage();
   await privatePage.addInitScript(()=>{Object.defineProperty(window,'localStorage',{get(){throw new Error('測試封鎖儲存');}});});

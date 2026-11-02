@@ -26,7 +26,8 @@ export const newId = () => 'w' + Date.now().toString(36) + Math.random().toStrin
 
 export function newWork() {
   const now = new Date().toISOString();
-  return { schema: WORK_SCHEMA, version: 1, id: newId(), title: '我的直笛小曲', meter: '4/4', bars: 4, tempo: 90, system: db.prefs.system, notes: [], author: { ...db.profile }, createdAt: now, updatedAt: now };
+  const composeMode = ['starter', 'simple', 'full'].includes(db.prefs.composeMode) ? db.prefs.composeMode : 'starter';
+  return { schema: WORK_SCHEMA, version: 1, id: newId(), title: '我的直笛小曲', meter: '4/4', bars: composeMode === 'full' ? 8 : 4, composeMode, tempo: 90, system: db.prefs.system, notes: [], author: { ...db.profile }, createdAt: now, updatedAt: now };
 }
 
 export function putWork(w) {
@@ -45,6 +46,7 @@ export function parseWorkFile(text) {
   const list = Array.isArray(j?.works) ? j.works : [j];
   const ok = list.filter((w) => w && w.schema === WORK_SCHEMA && Array.isArray(w.notes)).map((w) => ({
     schema: WORK_SCHEMA, version: 1, id: String(w.id || newId()), title: String(w.title || '未命名作品').slice(0, 40),
+    composeMode: ['starter', 'simple', 'full'].includes(w.composeMode) ? w.composeMode : 'full',
     meter: ['4/4', '3/4', '2/4'].includes(w.meter) ? w.meter : '4/4', bars: Math.min(8, Math.max(4, +w.bars || 4)),
     tempo: Math.min(160, Math.max(50, +w.tempo || 90)), system: w.system === 'german' ? 'german' : 'english',
     notes: w.notes.filter((n) => n && typeof n.p === 'string' && [1, 2, 3, 4, 6, 8].includes(+n.d)).map((n) => ({ p: n.p, d: +n.d })),
