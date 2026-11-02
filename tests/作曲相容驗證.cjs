@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
   await page.waitForFunction(()=>window.__rh);
   await page.screenshot({path:'docs/作曲-入門.png',fullPage:true});
   const result = await page.evaluate(async()=>{
-    const store=await import('/js/store.js?v=6');
+    const store=await import('/js/store.js?v=7');
     const old={...store.newWork(),bars:4,tempo:160,notes:[{p:'C#6',d:2}]};
     delete old.composeMode;
     const restored=store.parseWorkFile(JSON.stringify(old))[0];
@@ -21,7 +21,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.evaluate(()=>window.__rh.compose.w.notes[0].p),'C#6');
   assert.equal(await page.locator('#compose .bars').inputValue(),'4');
   await page.locator('#compose .cmode').selectOption('full');
-  await page.evaluate(async()=>{const s=await import('/js/store.js?v=6');window.__rh.compose.open(s.newWork());});
+  await page.evaluate(async()=>{const s=await import('/js/store.js?v=7');window.__rh.compose.open(s.newWork());});
   assert.equal(await page.locator('#compose .bars').inputValue(),'8');
   assert.equal(await page.locator('#compose .cmode').inputValue(),'full');
   await page.screenshot({path:'docs/作曲-完整版.png',fullPage:true});

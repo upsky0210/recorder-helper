@@ -1,7 +1,7 @@
 /* 直笛小幫手 主程式：指法表、記憶遊戲、小測驗、小作曲、我的作品 */
-import { NOTES, NOTE, LEVELS, SYSTEMS, label, fingersOf, fingerOf, hasFinger, levelNotes, fingerSVG, staffSVG, singleNoteAbc, SINGLE } from './music.js?v=6';
-import { playNote, playMelody, renderWav, renderAudio, renderMp3 } from './audio.js?v=6';
-import * as store from './store.js?v=6';
+import { NOTES, NOTE, LEVELS, SYSTEMS, label, fingersOf, fingerOf, hasFinger, levelNotes, fingerSVG, staffSVG, singleNoteAbc, SINGLE } from './music.js?v=7';
+import { playNote, playMelody, renderWav, renderAudio, renderMp3 } from './audio.js?v=7';
+import * as store from './store.js?v=7';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -298,14 +298,22 @@ function workAbc(w, { tempo = false } = {}) {
   const L = layout(w), upb = unitsPerBar(w);
   let abc = `X:1\nM:${w.meter}\nL:1/8\n${tempo ? `Q:1/4=${w.tempo}\n` : ''}K:C clef=treble\n`;
   const charMap = new Map();
+  const accidentals = new Map();
   w.notes.forEach((n, i) => {
     const { pos } = L.out[i] || { pos: 0 };
-    const tok = (n.p === 'rest' ? 'z' : NOTE[n.p]?.abc || 'z') + (n.d === 1 ? '' : n.d);
+    const pitch = w.composeMode === 'simple' && n.p === 'A#4' ? '_B' : NOTE[n.p]?.abc;
+    // 簡易版同小節混用升降與本位音時，補上必要的還原記號。
+    const base = pitch?.replace(/^[\^_=]+/, '');
+    const altered = pitch && /^[\^_]/.test(pitch);
+    const written = w.composeMode === 'simple' && pitch && !altered && accidentals.get(base) ? '=' + pitch : pitch;
+    if (pitch) accidentals.set(base, altered);
+    const tok = (n.p === 'rest' ? 'z' : written || 'z') + (n.d === 1 ? '' : n.d);
     charMap.set(abc.length, i);
     abc += tok;
     const end = pos + n.d, nx = w.notes[i + 1];
     if (end === upb) abc += (L.out[i].bar + 1) % 4 === 0 ? ' |\n' : ' | ';
     else if (!(n.d === 1 && pos % 2 === 0 && nx?.d === 1 && nx.p !== 'rest' && n.p !== 'rest')) abc += ' ';   // 同一拍的兩個八分音符連在一起
+    if (end === upb) accidentals.clear();
   });
   // 還沒寫的地方用看不見的休止符（x）佔位，讓小節數看得出來
   let bar = L.bar ?? 0, pos = L.pos ?? 0;
@@ -319,11 +327,11 @@ function workAbc(w, { tempo = false } = {}) {
   return { abc, charMap };
 }
 
-const noteLabel = (p) => (p === 'rest' ? '休止' : label(NOTE[p]));
-// 作曲模式獨立於遊戲年級；簡易版依老師截圖保留十二音。
+const noteLabel = (p, mode) => (p === 'rest' ? '休止' : mode === 'simple' && p === 'A#4' ? '降Si' : label(NOTE[p]));
+// 作曲模式獨立於遊戲年級；簡易版依老師回饋提供十六音。
 const COMPOSE_NOTES = {
   starter: ['G4', 'A4', 'B4', 'C5', 'D5'],
-  simple: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'F5', 'G5', 'A5'],
+  simple: ['C4', 'D4', 'E4', 'F4', 'F#4', 'G4', 'A4', 'A#4', 'B4', 'C5', 'D5', 'E5', 'F5', 'F#5', 'G5', 'A5'],
 };
 const TEMPOS = [[56, '慢板'], [66, '行板'], [76, '小行板'], [88, '中板'], [96, '稍快板'], [120, '快板']];
 const tempoName = (v) => v < 56 || v > 152 ? '自訂速度' : TEMPOS.filter(([n]) => v >= n).at(-1)[1];
@@ -368,7 +376,7 @@ const compose = {
     tempo.oninput = (e) => { this.stop(); w.tempo = +e.target.value; showTempo(); this.draft(); };
     preset.onchange = () => { if (!preset.value) return; this.stop(); w.tempo = +preset.value; showTempo(); this.draft(); };
     const available = COMPOSE_NOTES[w.composeMode];
-    $('.pitches', pane).innerHTML = NOTES.filter((n) => hasFinger(n, sys()) && (!available || available.includes(n.id))).map((n) => noteBtn(n, { h: 54 })).join('')
+    $('.pitches', pane).innerHTML = NOTES.filter((n) => hasFinger(n, sys()) && (!available || available.includes(n.id))).map((n) => noteBtn(w.composeMode === 'simple' && n.id === 'A#4' ? { ...n, sol: '降Si', name: 'B♭' } : n, { h: 54 })).join('')
       + '<button class="nbtn rest" data-id="rest"><b>休止符</b><small>不吹</small></button>';
     $$('.pitches .nbtn', pane).forEach((b) => (b.onclick = () => this.pick(b.dataset.id)));
     $('.play', pane).onclick = () => (this.stopFn ? this.stop() : this.play());
@@ -449,7 +457,7 @@ const compose = {
       const nn = NOTE[n.p];
       html += `<div class="fcell ${i === this.sel ? 'sel' : ''} ${i === now ? 'now' : ''}" data-i="${i}" style="--c:${nn?.color || '#ddd'}">`
         + (n.p === 'rest' ? '<div style="height:80px;display:flex;align-items:center;font-size:26px">𝄽</div>' : fingerSVG(fingerOf(nn, sys()), { h: 80 }))
-        + `<small>${noteLabel(n.p)}</small></div>`;
+        + `<small>${noteLabel(n.p, w.composeMode)}</small></div>`;
     });
     $('.frow', pane).innerHTML = html || '<span class="hint">先選節奏（例如 ♩ 四分音符），再點下面的音，就會寫進譜裡。</span>';
     $$('.fcell', pane).forEach((c) => (c.onclick = () => { this.sel = this.sel === +c.dataset.i ? -1 : +c.dataset.i; this.update(); }));
@@ -457,7 +465,7 @@ const compose = {
     // 狀態
     const st = $('.status', pane);
     if (!L.ok) st.textContent = '⚠ 有音符跨過小節線，請刪掉或修改';
-    else if (this.sel >= 0) st.textContent = `已選第 ${this.sel + 1} 個音（${noteLabel(w.notes[this.sel].p)}）：點音可以換音、點節奏可以換長短、按「刪除」刪掉，再點一次取消選取`;
+    else if (this.sel >= 0) st.textContent = `已選第 ${this.sel + 1} 個音（${noteLabel(w.notes[this.sel].p, w.composeMode)}）：點音可以換音、點節奏可以換長短、按「刪除」刪掉，再點一次取消選取`;
     else if (L.full) st.textContent = `🎉 ${w.bars} 小節都寫好了！按「播放」聽聽看，再按「儲存」`;
     else st.textContent = `正在寫第 ${L.bar + 1} 小節，還剩 ${(L.upb - L.pos) / 2} 拍（共 ${w.bars} 小節）`;
     $('.play', pane).textContent = this.stopFn ? '■ 停止' : '▶ 播放';
@@ -522,7 +530,7 @@ async function cardPng(w) {
       const nn = NOTE[n.p];
       if (n.p === 'rest') fing += `<text x="${x + cw / 2}" y="${y + 60}" font-size="40" text-anchor="middle" fill="#666">𝄽</text>`;
       else fing += fingerSVG(fingerOf(nn, w.system), { h: fh }).replace('<svg ', `<svg x="${x + (cw - 35) / 2}" y="${y}" width="35" height="${fh}" `).replace(/ style="[^"]*"/, '');
-      fing += `<text x="${x + cw / 2}" y="${y + fh + 22}" font-size="16" font-weight="700" text-anchor="middle" fill="${n.p === 'rest' ? '#777' : '#3a2f25'}">${esc(noteLabel(n.p))}</text>`;
+      fing += `<text x="${x + cw / 2}" y="${y + fh + 22}" font-size="16" font-weight="700" text-anchor="middle" fill="${n.p === 'rest' ? '#777' : '#3a2f25'}">${esc(noteLabel(n.p, w.composeMode))}</text>`;
       x += cw;
     });
     fing += `<line x1="${x + gap / 2 - 4}" y1="${y}" x2="${x + gap / 2 - 4}" y2="${y + fh}" stroke="#e0d4bf" stroke-width="2"/>`;

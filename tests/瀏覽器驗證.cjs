@@ -17,7 +17,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('#chart .chart-grid .nbtn').count(), 27);
   assert.equal(await page.locator('#chart .nbtn.wait').count(), 0);
   const verified = await page.evaluate(async () => {
-    const { NOTE, NOTES, LEVELS, levelNotes } = await import('/js/music.js?v=6');
+    const { NOTE, NOTES, LEVELS, levelNotes } = await import('/js/music.js?v=7');
     return {
       corrected: ['A#4','C#6','D6'].map(id => NOTE[id].finger.english),
       germanEmpty: NOTES.every(n => n.finger.german === null),
@@ -89,7 +89,13 @@ const assert = require('node:assert/strict');
   await page.locator('[data-tab="compose"]').click();
   assert.equal(await page.locator('#compose .pitches .nbtn:not(.rest)').count(), 5);
   await page.locator('#compose .cmode').selectOption('simple');
-  assert.equal(await page.locator('#compose .pitches .nbtn:not(.rest)').count(), 12);
+  assert.equal(await page.locator('#compose .pitches .nbtn:not(.rest)').count(), 16);
+  assert.match(await page.locator('#compose .pitches [data-id="A#4"]').innerText(), /降Si/);
+  for (const id of ['E5','F#4','F#5','A#4']) await page.locator(`#compose .pitches [data-id="${id}"]`).click();
+  assert.deepEqual(await page.evaluate(()=>window.__rh.compose.w.notes.map(n=>n.p)), ['E5','F#4','F#5','A#4']);
+  assert.match(await page.locator('#compose .frow').innerText(), /降Si/);
+  await page.screenshot({path:'docs/高年級簡易16音.png',fullPage:true});
+  for (let i=0;i<4;i++) await page.locator('#compose .del').click();
   await page.locator('#compose .cmode').selectOption('full');
   assert.equal(await page.locator('#compose .bars').inputValue(), '8');
   assert.equal(await page.locator('#compose .pitches .nbtn:not(.rest)').count(), 27);
@@ -167,7 +173,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.evaluate(()=>window.__rh.compose.w.system),'english');
   // 產生自行繪製的指法對照圖，不含課本掃描。
   const svg = await page.evaluate(async () => {
-    const {NOTES,fingersOf,fingerSVG,label}=await import('/js/music.js?v=6');
+    const {NOTES,fingersOf,fingerSVG,label}=await import('/js/music.js?v=7');
     const esc=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;');
     const cells=NOTES.map((n,i)=>{
       const x=20+(i%9)*155,y=90+Math.floor(i/9)*340, fs=fingersOf(n,'english');
@@ -179,12 +185,12 @@ const assert = require('node:assert/strict');
   const report=await context.newPage(); await report.setContent(`<html><body style="margin:0">${svg}</body></html>`);
   await report.setViewportSize({width:1435,height:1150});
   await report.screenshot({path:'docs/指法轉錄對照.png',fullPage:true});
-  const worker=await page.evaluate(async()=>{await navigator.serviceWorker.ready;const keys=await caches.keys();return {keys,files:await (await caches.open('rh-v6')).keys().then(a=>a.map(r=>r.url))};});
-  assert.ok(worker.keys.includes('rh-v6'));assert.ok(worker.files.some(u=>u.includes('lame.min.js')));
+  const worker=await page.evaluate(async()=>{await navigator.serviceWorker.ready;const keys=await caches.keys();return {keys,files:await (await caches.open('rh-v7')).keys().then(a=>a.map(r=>r.url))};});
+  assert.ok(worker.keys.includes('rh-v7'));assert.ok(worker.files.some(u=>u.includes('lame.min.js')));
   await context.setOffline(true);
   await page.reload();await page.waitForFunction(()=>window.__rh);
   assert.equal(await page.evaluate(()=>typeof window.lamejs.Mp3Encoder),'function');
-  assert.equal(await page.evaluate(async () => (await import('/js/music.js?v=6')).NOTE.D6.finger.english), 'h|101101h');
+  assert.equal(await page.evaluate(async () => (await import('/js/music.js?v=7')).NOTE.D6.finger.english), 'h|101101h');
   await context.setOffline(false);
   const privatePage=await browser.newPage();
   await privatePage.addInitScript(()=>{Object.defineProperty(window,'localStorage',{get(){throw new Error('測試封鎖儲存');}});});
