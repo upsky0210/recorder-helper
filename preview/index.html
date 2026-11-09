@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>音符練習本｜版型審閱</title>
+<meta name="description" content="國小高音直笛指法表、記憶遊戲、小測驗與小作曲">
+<meta name="theme-color" content="#7b5b3a">
+
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="直笛小幫手">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="stylesheet" href="css/notebook.css?v=1">
+</head>
+<body>
+<aside class="review-bar"><span>版型提案 01 · 音符練習本</span><a href="../">查看原版 ↗</a></aside>
+<header class="top">
+  <h1><span class="logo" aria-hidden="true">♩</span><span>直笛小幫手<small>一本可以聽、可以寫的音符練習本</small></span></h1>
+  <div hidden class="sys" role="radiogroup" aria-label="指法系統">
+    <button data-sys="english" role="radio">英式</button><button data-sys="german" role="radio">德式</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button data-tab="chart" role="tab"><small>01</small><span>認識音與指法</span></button>
+  <button data-tab="compose" role="tab"><small>02</small><span>寫一段小旋律</span></button>
+</nav>
+
+<main>
+  <!-- 指法表 -->
+  <section id="chart" class="pane" hidden>
+    <div class="page-intro"><p>指法練習</p><h2>從一個音，開始。</h2><span>點選音符，看看指法，再聽聽它的聲音。</span></div><div class="chart-layout"><div class="chart-grid"></div>
+    <div class="detail card"></div></div>
+    <details class="legend card">
+      <summary>怎麼看指法圖？</summary>
+      <div class="legend-body"></div>
+    </details>
+  </section>
+
+  <!-- 記憶遊戲 -->
+  <section id="memory" class="pane" hidden>
+    <div class="levels"></div>
+    <div class="card game">
+      <div class="gtop"><b class="lv">準備好了嗎？</b><span class="lives"></span><span class="best"></span></div>
+      <div class="prog"></div>
+      <div class="msg">老師會吹一段旋律，你照順序按回去！每過一關多一個音。</div>
+      <div class="keys"></div>
+      <div class="gfoot"><button class="big go">▶ 開始</button><span class="hint">電腦可以按數字鍵 1、2、3…</span></div>
+    </div>
+  </section>
+
+  <!-- 小測驗 -->
+  <section id="quiz" class="pane" hidden>
+    <div class="qmodes">
+      <button data-qm="f2n" class="big">👀 看指法猜音</button>
+      <button data-qm="s2f" class="big">🎼 看五線譜選指法</button>
+    </div>
+    <div class="levels"></div>
+    <div class="card qbox">
+      <div class="gtop"><b class="qno"></b><span class="qscore"></span><span class="best"></span></div>
+      <div class="qask"></div>
+      <div class="qopts"></div>
+      <div class="msg"></div>
+      <div class="gfoot"><button class="big go">▶ 開始測驗</button></div>
+    </div>
+  </section>
+
+  <!-- 小作曲 -->
+  <section id="compose" class="pane" hidden><div class="page-intro"><p>我的小作曲</p><h2>讓音符，變成旋律。</h2><span>先選節奏，再選音。把心裡的旋律寫下來。</span></div>
+    <div class="card cmeta">
+      <label>作曲模式 <select class="cmode"><option value="starter">三年級入門（5 音）</option><option value="simple">高年級簡易（16 音）</option><option value="full">完整版（全部音）</option></select></label>
+      <label>曲名 <input class="title" maxlength="30"></label>
+      <label>拍號 <select class="meter"><option>4/4</option><option>3/4</option><option>2/4</option></select></label>
+      <label>小節 <select class="bars"><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></label>
+      <label>速度 <input class="tempo" type="range" min="56" max="152" step="1"><output class="tempoV"></output></label>
+      <label>速度名稱 <select class="tempoPreset" aria-label="選擇速度名稱"><option value="">自訂速度</option><option value="56">慢板（56～66）</option><option value="66">行板（66～76）</option><option value="76">小行板（76～88）</option><option value="88">中板（88～96）</option><option value="96">稍快板（96～120）</option><option value="120">快板（120～152）</option></select></label>
+    </div>
+    <div class="card score">
+      <div class="staff"></div>
+      <div class="frow"></div>
+      <div class="status"></div>
+    </div>
+    <div class="card palette">
+      <h3 class="tool-label">01　選擇節奏</h3><div class="durs"></div>
+      <h3 class="tool-label">02　加入音符</h3><div class="pitches"></div>
+      <div class="ctrls">
+        <button class="big play">▶ 播放</button>
+        <button class="big del">⌫ 刪除</button>
+        <button class="big clear">清空</button>
+        <button class="big savew">儲存</button>
+        <button class="big out">輸出／分享</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 我的作品 -->
+  <section id="works" class="pane" hidden>
+    <div class="card profile">
+      <h2>我的資料 <small>只存在這台裝置，不會上傳</small></h2>
+      <label>班級 <input class="cls" inputmode="numeric" maxlength="6" placeholder="例：501"></label>
+      <label>座號 <input class="seat" inputmode="numeric" maxlength="3" placeholder="例：7"></label>
+      <label>姓名 <input class="name" maxlength="12" placeholder="你的名字"></label>
+    </div>
+    <div class="card">
+      <div class="wtools">
+        <h2>作品</h2>
+        <button class="big neww">✏️ 寫新作品</button>
+        <label class="big imp">📥 匯入作品檔<input type="file" accept=".json,application/json" hidden></label>
+      </div>
+      <ul class="wlist"></ul>
+    </div>
+  </section>
+</main>
+
+<footer><p>審閱用預覽 · 試作資料與原版分開儲存</p>
+  設計者 Upsky（阿喵老師）／工具 Claude Code
+  <span class="note">iPad 沒有聲音？請檢查側邊靜音開關和音量。</span>
+</footer>
+
+<dialog id="outDlg">
+  <form method="dialog" class="dlg">
+    <h2>輸出／分享作品</h2>
+    <div class="preview"><img alt="作品卡預覽"></div>
+    <p class="who"></p>
+    <div class="outs"></div>
+    <p class="tip">按「分享」可以選 Gmail、Google Classroom，或「儲存到檔案」存到 Google 雲端硬碟、Synology NAS。</p>
+    <button class="big close" value="close">關閉</button>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="../vendor/lamejs/lame.min.js?v=1.2.1"></script>
+<script src="../vendor/abcjs/abcjs-basic-min.js?v=6.4.4"></script>
+<script type="module" src="js/app.js?v=7"></script>
+</body>
+</html>
